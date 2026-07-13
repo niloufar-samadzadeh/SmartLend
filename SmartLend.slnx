@@ -1,3 +1,5 @@
 <Solution>
   <Project Path="SmartLend.Api/SmartLend.Api.csproj" />
+  <Project Path="SmartLend.Core/SmartLend.Core.csproj" />
+  <Project Path="SmartLend.Infrastructure/SmartLend.Infrastructure.csproj" />
 </Solution>

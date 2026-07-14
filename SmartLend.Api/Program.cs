@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SmartLend.Infrastructure.Data;
-
+using SmartLend.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +16,8 @@ builder.Services.AddDbContext<SmartLendDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<LoanApplicationService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

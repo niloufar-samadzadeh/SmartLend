@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartLend.Api.DTOs;
 using SmartLend.Core.Entities;
-using SmartLend.Infrastructure.Data;
+using SmartLend.Api.Services;
 
 namespace SmartLend.Api.Controllers;
 
@@ -9,31 +9,20 @@ namespace SmartLend.Api.Controllers;
 [Route("api/[controller]")]
 public class LoanApplicationsController : ControllerBase
 {
-    private readonly SmartLendDbContext _dbContext;
+    private readonly LoanApplicationService _loanApplicationService;
 
-    public LoanApplicationsController(SmartLendDbContext dbContext)
+    public LoanApplicationsController(
+        LoanApplicationService loanApplicationService)
     {
-        _dbContext = dbContext;
+        _loanApplicationService = loanApplicationService;
     }
 
     [HttpPost]
     public async Task<ActionResult<LoanApplication>> Create(
-        CreateLoanApplicationRequest request)
+    CreateLoanApplicationRequest request)
     {
-        var loanApplication = new LoanApplication
-        {
-            UserId = request.UserId,
-            MonthlyIncome = request.MonthlyIncome,
-            EmploymentStatus = request.EmploymentStatus,
-            EmploymentYears = request.EmploymentYears,
-            LoanAmount = request.LoanAmount,
-            LoanPurpose = request.LoanPurpose,
-            ExistingDebt = request.ExistingDebt,
-            CreditHistoryMonths = request.CreditHistoryMonths
-        };
-
-        _dbContext.LoanApplications.Add(loanApplication);
-        await _dbContext.SaveChangesAsync();
+        var loanApplication =
+            await _loanApplicationService.CreateAsync(request);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -45,7 +34,7 @@ public class LoanApplicationsController : ControllerBase
     public async Task<ActionResult<LoanApplication>> GetById(int id)
     {
         var loanApplication =
-            await _dbContext.LoanApplications.FindAsync(id);
+            await _loanApplicationService.GetByIdAsync(id);
 
         if (loanApplication is null)
         {

@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using SmartLend.Api.DTOs;
 using SmartLend.Core.Entities;
 using SmartLend.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SmartLend.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class LoanApplicationsController : ControllerBase
 {
     private readonly LoanApplicationService _loanApplicationService;

@@ -37,4 +37,19 @@ public class AuthController : ControllerBase
             user.CreatedAt
         });
     }
+    [HttpPost("login")]
+    public async Task<IActionResult> Login(LoginRequest request)
+    {
+        var response = await _authService.LoginAsync(request);
+
+        if (response is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid email or password."
+            });
+        }
+
+        return Ok(response);
+    }
 }

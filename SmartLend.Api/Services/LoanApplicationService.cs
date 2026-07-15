@@ -3,6 +3,7 @@ using SmartLend.Core.Entities;
 using SmartLend.Infrastructure.Data;
 using SmartLend.Api.Clients;
 using SmartLend.Core.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace SmartLend.Api.Services;
 
@@ -60,6 +61,44 @@ public class LoanApplicationService
 
     public async Task<LoanApplication?> GetByIdAsync(int id)
     {
-        return await _dbContext.LoanApplications.FindAsync(id);
+        return await _dbContext.LoanApplications
+            .Include(application => application.User)
+            .FirstOrDefaultAsync(application => application.Id == id);
     }
+    public async Task<List<LoanApplication>> GetAllAsync(LoanStatus? status)
+    {
+        var query = _dbContext.LoanApplications
+            .Include(application => application.User)
+            .AsQueryable();
+
+        if (status.HasValue)
+        {
+            query = query.Where(application => application.Status == status.Value);
+        }
+
+        return await query
+            .OrderByDescending(application => application.SubmittedAt)
+            .ToListAsync();
+    }
+
+    public async Task<LoanApplication?> UpdateDecisionAsync(
+        int id,
+        LoanStatus status)
+    {
+        var loanApplication =
+            await _dbContext.LoanApplications.FindAsync(id);
+
+        if (loanApplication is null)
+        {
+            return null;
+        }
+
+        loanApplication.Status = status;
+        loanApplication.ReviewedAt = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync();
+
+        return loanApplication;
+    }
+
 }

@@ -3,12 +3,13 @@ using SmartLend.Api.DTOs;
 using SmartLend.Core.Entities;
 using SmartLend.Api.Services;
 using Microsoft.AspNetCore.Authorization;
+using SmartLend.Core.Enums;
 
 namespace SmartLend.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+//[Authorize]
 public class LoanApplicationsController : ControllerBase
 {
     private readonly LoanApplicationService _loanApplicationService;
@@ -44,5 +45,43 @@ public class LoanApplicationsController : ControllerBase
         }
 
         return Ok(loanApplication);
+    }
+
+    [HttpGet]
+    //[Authorize(Roles = "Admin")]
+    public async Task<ActionResult<List<LoanApplication>>> GetAll(
+    [FromQuery] LoanStatus? status)
+    {
+        var applications =
+            await _loanApplicationService.GetAllAsync(status);
+
+        return Ok(applications);
+    }
+    [HttpPatch("{id:int}/decision")]
+    //[Authorize(Roles = "Admin")]
+    public async Task<ActionResult<LoanApplication>> UpdateDecision(
+    int id,
+    LoanDecisionRequest request)
+    {
+        if (request.Status is not LoanStatus.Approved
+            and not LoanStatus.Rejected)
+        {
+            return BadRequest(new
+            {
+                message = "Status must be Approved or Rejected."
+            });
+        }
+
+        var application =
+            await _loanApplicationService.UpdateDecisionAsync(
+                id,
+                request.Status);
+
+        if (application is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(application);
     }
 }

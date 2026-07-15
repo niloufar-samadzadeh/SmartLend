@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../services/authService";
+import { useContext } from "react";
+import { AuthContext } from "../contexts/AuthContext";
 import {
     Box,
     Button,
@@ -16,7 +18,7 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
 
     const navigate = useNavigate();
-
+    const auth = useContext(AuthContext);
     const handleLogin = async () => {
         try {
             const result = await login({
@@ -24,7 +26,7 @@ export default function LoginPage() {
                 password,
             });
 
-            localStorage.setItem("token", result.token);
+            auth.login(result.token);
 
             navigate("/dashboard");
         } catch {

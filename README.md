@@ -62,12 +62,6 @@ SQL Server
 
 ---
 
-## Screenshots
-
-Coming Soon
-
----
-
 ## Future Improvements
 
 - Email Notifications

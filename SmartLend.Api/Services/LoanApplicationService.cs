@@ -22,7 +22,8 @@ public class LoanApplicationService
     }
 
     public async Task<LoanApplication> CreateAsync(
-        CreateLoanApplicationRequest request)
+        CreateLoanApplicationRequest request,
+        int userId)
     {
         var riskResult = await _riskScoringClient.PredictAsync(
             new RiskRequest
@@ -35,7 +36,7 @@ public class LoanApplicationService
             });
         var loanApplication = new LoanApplication
         {
-            UserId = request.UserId,
+            UserId = userId,
             MonthlyIncome = request.MonthlyIncome,
             EmploymentStatus = request.EmploymentStatus,
             EmploymentYears = request.EmploymentYears,
@@ -99,6 +100,13 @@ public class LoanApplicationService
         await _dbContext.SaveChangesAsync();
 
         return loanApplication;
+    }
+    public async Task<List<LoanApplication>> GetMineAsync(int userId)
+    {
+        return await _dbContext.LoanApplications
+            .Where(application => application.UserId == userId)
+            .OrderByDescending(application => application.SubmittedAt)
+            .ToListAsync();
     }
 
 }

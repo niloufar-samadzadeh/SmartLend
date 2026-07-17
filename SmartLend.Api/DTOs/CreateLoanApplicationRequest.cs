@@ -1,17 +1,16 @@
-namespace SmartLend.Api.DTOs;
-
 using System.ComponentModel.DataAnnotations;
+
+namespace SmartLend.Api.DTOs;
 
 public class CreateLoanApplicationRequest
 {
-    public int UserId { get; set; }
-
     [Range(1, double.MaxValue)]
     public decimal MonthlyIncome { get; set; }
 
     [Required]
     public string EmploymentStatus { get; set; } = string.Empty;
 
+    [Range(0, int.MaxValue)]
     public int EmploymentYears { get; set; }
 
     [Range(1, double.MaxValue)]
@@ -20,7 +19,9 @@ public class CreateLoanApplicationRequest
     [Required]
     public string LoanPurpose { get; set; } = string.Empty;
 
+    [Range(0, double.MaxValue)]
     public decimal ExistingDebt { get; set; }
 
+    [Range(0, int.MaxValue)]
     public int CreditHistoryMonths { get; set; }
 }

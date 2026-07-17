@@ -3,6 +3,7 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoanApplicationPage from "./pages/LoanApplicationPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 
 function App() {
   return (
@@ -22,6 +23,14 @@ function App() {
         element={
           <ProtectedRoute>
             <LoanApplicationPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminDashboardPage />
           </ProtectedRoute>
         }
       />

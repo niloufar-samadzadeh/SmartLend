@@ -1,127 +1,303 @@
-import { useNavigate } from "react-router-dom";
-import { createLoanApplication } from "../services/loanService";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-    Box,
-    Button,
-    Container,
-    MenuItem,
-    Stack,
-    TextField,
-    Typography,
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Container,
+  MenuItem,
+  Snackbar,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
 
+import { createLoanApplication } from "../services/loanService";
+
+interface SubmissionResult {
+  riskScore: number | null;
+  status: string;
+}
+
 export default function LoanApplicationPage() {
-    const [monthlyIncome, setMonthlyIncome] = useState("");
-    const [employmentStatus, setEmploymentStatus] = useState("Full-time");
-    const [employmentYears, setEmploymentYears] = useState("");
-    const [loanAmount, setLoanAmount] = useState("");
-    const [loanPurpose, setLoanPurpose] = useState("");
-    const [existingDebt, setExistingDebt] = useState("");
-    const [creditHistoryMonths, setCreditHistoryMonths] = useState("");
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const handleSubmit = async () => {
-        try {
-            const result = await createLoanApplication({
-                userId: 1,
-                monthlyIncome: Number(monthlyIncome),
-                employmentStatus,
-                employmentYears: Number(employmentYears),
-                loanAmount: Number(loanAmount),
-                loanPurpose,
-                existingDebt: Number(existingDebt),
-                creditHistoryMonths: Number(creditHistoryMonths),
-            });
+  const [monthlyIncome, setMonthlyIncome] = useState("");
+  const [employmentStatus, setEmploymentStatus] =
+    useState("Full-time");
+  const [employmentYears, setEmploymentYears] = useState("");
+  const [loanAmount, setLoanAmount] = useState("");
+  const [loanPurpose, setLoanPurpose] = useState("");
+  const [existingDebt, setExistingDebt] = useState("");
+  const [creditHistoryMonths, setCreditHistoryMonths] =
+    useState("");
 
-            alert(
-                `Application submitted!\nRisk Score: ${result.riskScore}\nStatus: ${result.status}`
-            );
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] =
+    useState<SubmissionResult | null>(null);
 
-            navigate("/dashboard");
-        } catch (error) {
-            console.error(error);
-            alert("Failed to submit application.");
-        }
-    };
-    return (
-        <Container maxWidth="md">
-            <Box sx={{ py: 4 }}>
-                <Typography
-                    variant="h4"
-                    sx={{ fontWeight: 700 }}
-                >
-                    New Loan Application
-                </Typography>
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-                <Typography
-                    sx={{
-                        color: "text.secondary",
-                        mt: 1,
-                    }}
-                >
-                    Complete the form to receive an automated risk assessment.
-                </Typography>
-                <Stack spacing={3} sx={{ mt: 4 }}>
+  const handleSubmit = async () => {
+    setErrorMessage("");
+    setResult(null);
 
-                    <TextField
-                        label="Monthly Income"
-                        value={monthlyIncome}
-                        onChange={(e) => setMonthlyIncome(e.target.value)}
+    if (
+      !monthlyIncome ||
+      !employmentYears ||
+      !loanAmount ||
+      !loanPurpose.trim() ||
+      !existingDebt ||
+      !creditHistoryMonths
+    ) {
+      setErrorMessage("Please complete all required fields.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const response = await createLoanApplication({
+        monthlyIncome: Number(monthlyIncome),
+        employmentStatus,
+        employmentYears: Number(employmentYears),
+        loanAmount: Number(loanAmount),
+        loanPurpose: loanPurpose.trim(),
+        existingDebt: Number(existingDebt),
+        creditHistoryMonths: Number(creditHistoryMonths),
+      });
+
+      setResult({
+        riskScore: response.riskScore,
+        status: response.status,
+      });
+
+      setSuccessMessage(
+        "Loan application submitted successfully."
+      );
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        "The application could not be submitted. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getResultSeverity = () => {
+    if (result?.status === "Approved") {
+      return "success";
+    }
+
+    if (result?.status === "Rejected") {
+      return "error";
+    }
+
+    return "warning";
+  };
+
+  return (
+    <Container maxWidth="md">
+      <Box sx={{ py: 4 }}>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 700,
+          }}
+        >
+          New Loan Application
+        </Typography>
+
+        <Typography
+          sx={{
+            color: "text.secondary",
+            mt: 1,
+          }}
+        >
+          Complete the form to receive an automated risk
+          assessment.
+        </Typography>
+
+        <Card sx={{ mt: 4 }}>
+          <CardContent>
+            <Stack spacing={3}>
+              <TextField
+                label="Monthly Income"
+                type="number"
+                value={monthlyIncome}
+                onChange={(event) =>
+                  setMonthlyIncome(event.target.value)
+                }
+                required
+                fullWidth
+              />
+
+              <TextField
+                select
+                label="Employment Status"
+                value={employmentStatus}
+                onChange={(event) =>
+                  setEmploymentStatus(event.target.value)
+                }
+                required
+                fullWidth
+              >
+                <MenuItem value="Full-time">
+                  Full-time
+                </MenuItem>
+                <MenuItem value="Part-time">
+                  Part-time
+                </MenuItem>
+                <MenuItem value="Self-employed">
+                  Self-employed
+                </MenuItem>
+                <MenuItem value="Unemployed">
+                  Unemployed
+                </MenuItem>
+              </TextField>
+
+              <TextField
+                label="Years of Employment"
+                type="number"
+                value={employmentYears}
+                onChange={(event) =>
+                  setEmploymentYears(event.target.value)
+                }
+                required
+                fullWidth
+              />
+
+              <TextField
+                label="Loan Amount"
+                type="number"
+                value={loanAmount}
+                onChange={(event) =>
+                  setLoanAmount(event.target.value)
+                }
+                required
+                fullWidth
+              />
+
+              <TextField
+                label="Loan Purpose"
+                value={loanPurpose}
+                onChange={(event) =>
+                  setLoanPurpose(event.target.value)
+                }
+                required
+                fullWidth
+              />
+
+              <TextField
+                label="Existing Debt"
+                type="number"
+                value={existingDebt}
+                onChange={(event) =>
+                  setExistingDebt(event.target.value)
+                }
+                required
+                fullWidth
+              />
+
+              <TextField
+                label="Credit History (Months)"
+                type="number"
+                value={creditHistoryMonths}
+                onChange={(event) =>
+                  setCreditHistoryMonths(event.target.value)
+                }
+                required
+                fullWidth
+              />
+
+              {errorMessage && (
+                <Alert severity="error">
+                  {errorMessage}
+                </Alert>
+              )}
+
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <CircularProgress
+                      size={20}
+                      sx={{
+                        color: "inherit",
+                        mr: 1,
+                      }}
                     />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Application"
+                )}
+              </Button>
 
-                    <TextField
-                        select
-                        label="Employment Status"
-                        value={employmentStatus}
-                        onChange={(e) => setEmploymentStatus(e.target.value)}
+              {result && (
+                <Card variant="outlined">
+                  <CardContent>
+                    <Alert severity={getResultSeverity()}>
+                      Application assessment completed.
+                    </Alert>
+
+                    <Typography
+                      sx={{
+                        mt: 2,
+                        fontWeight: 600,
+                      }}
                     >
-                        <MenuItem value="Full-time">Full-time</MenuItem>
-                        <MenuItem value="Part-time">Part-time</MenuItem>
-                        <MenuItem value="Self-employed">Self-employed</MenuItem>
-                        <MenuItem value="Unemployed">Unemployed</MenuItem>
-                    </TextField>
+                      Status: {result.status}
+                    </Typography>
 
-                    <TextField
-                        label="Years of Employment"
-                        value={employmentYears}
-                        onChange={(e) => setEmploymentYears(e.target.value)}
-                    />
-
-                    <TextField
-                        label="Loan Amount"
-                        value={loanAmount}
-                        onChange={(e) => setLoanAmount(e.target.value)}
-                    />
-
-                    <TextField
-                        label="Loan Purpose"
-                        value={loanPurpose}
-                        onChange={(e) => setLoanPurpose(e.target.value)}
-                    />
-
-                    <TextField
-                        label="Existing Debt"
-                        value={existingDebt}
-                        onChange={(e) => setExistingDebt(e.target.value)}
-                    />
-
-                    <TextField
-                        label="Credit History (Months)"
-                        value={creditHistoryMonths}
-                        onChange={(e) => setCreditHistoryMonths(e.target.value)}
-                    />
+                    <Typography sx={{ mt: 1 }}>
+                      Risk Score:{" "}
+                      {result.riskScore === null
+                        ? "Not available"
+                        : result.riskScore.toFixed(2)}
+                    </Typography>
 
                     <Button
-                        variant="contained"
-                        size="large"
-                        onClick={handleSubmit}
+                      variant="outlined"
+                      sx={{ mt: 3 }}
+                      onClick={() => navigate("/dashboard")}
                     >
-                        Submit Application
+                      Back to Dashboard
                     </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </Stack>
+          </CardContent>
+        </Card>
+      </Box>
 
-                </Stack>
-            </Box>
-        </Container>
-    );
+      <Snackbar
+        open={Boolean(successMessage)}
+        autoHideDuration={4000}
+        onClose={() => setSuccessMessage("")}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+      >
+        <Alert
+          severity="success"
+          variant="filled"
+          onClose={() => setSuccessMessage("")}
+        >
+          {successMessage}
+        </Alert>
+      </Snackbar>
+    </Container>
+  );
 }

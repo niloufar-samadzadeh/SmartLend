@@ -4,6 +4,8 @@ using SmartLend.Core.Entities;
 using SmartLend.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using SmartLend.Core.Enums;
+using System.Security.Claims;
+using SmartLend.Api.Mappers;
 
 namespace SmartLend.Api.Controllers;
 
@@ -24,8 +26,18 @@ public class LoanApplicationsController : ControllerBase
     public async Task<ActionResult<LoanApplication>> Create(
     CreateLoanApplicationRequest request)
     {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(new
+            {
+                message = "The authenticated user could not be identified."
+            });
+        }
+
         var loanApplication =
-            await _loanApplicationService.CreateAsync(request);
+            await _loanApplicationService.CreateAsync(request, userId);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -48,17 +60,20 @@ public class LoanApplicationsController : ControllerBase
     }
 
     [HttpGet]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<List<LoanApplication>>> GetAll(
     [FromQuery] LoanStatus? status)
     {
         var applications =
             await _loanApplicationService.GetAllAsync(status);
 
-        return Ok(applications);
+        return Ok(
+            applications
+                .Select(application => application.ToResponse())
+        );
     }
     [HttpPatch("{id:int}/decision")]
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<LoanApplication>> UpdateDecision(
     int id,
     LoanDecisionRequest request)
@@ -83,5 +98,26 @@ public class LoanApplicationsController : ControllerBase
         }
 
         return Ok(application);
+    }
+    [HttpGet("mine")]
+    public async Task<ActionResult<List<LoanApplicationResponse>>> GetMine()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(new
+            {
+                message = "The authenticated user could not be identified."
+            });
+        }
+
+        var applications =
+            await _loanApplicationService.GetMineAsync(userId);
+
+        return Ok(
+            applications
+                .Select(application => application.ToResponse())
+        );
     }
 }

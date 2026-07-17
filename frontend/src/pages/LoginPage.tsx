@@ -28,7 +28,11 @@ export default function LoginPage() {
 
             auth.login(result.token);
 
-            navigate("/dashboard");
+            if (result.role === "Admin") {
+                navigate("/admin");
+            } else {
+                navigate("/dashboard");
+            }
         } catch {
             alert("Invalid email or password.");
         }

@@ -1,5 +1,4 @@
 export interface LoanApplicationRequest {
-  userId: number;
   monthlyIncome: number;
   employmentStatus: string;
   employmentYears: number;
@@ -11,6 +10,15 @@ export interface LoanApplicationRequest {
 
 export interface LoanApplicationResponse {
   id: number;
-  status: number;
+  status: string;
   riskScore: number | null;
+}
+
+export interface LoanApplication {
+  id: number;
+  monthlyIncome: number;
+  loanAmount: number;
+  status: string;
+  riskScore: number | null;
+  submittedAt: string;
 }

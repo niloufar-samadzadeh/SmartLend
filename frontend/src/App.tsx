@@ -4,6 +4,7 @@ import DashboardPage from "./pages/DashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoanApplicationPage from "./pages/LoanApplicationPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminRoute from "./components/AdminRoute";
 
 function App() {
   return (
@@ -30,7 +31,9 @@ function App() {
         path="/admin"
         element={
           <ProtectedRoute>
-            <AdminDashboardPage />
+            <AdminRoute>
+              <AdminDashboardPage />
+            </AdminRoute>
           </ProtectedRoute>
         }
       />

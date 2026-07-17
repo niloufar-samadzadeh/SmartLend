@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Alert,
@@ -12,43 +12,64 @@ import {
   Typography,
 } from "@mui/material";
 
-import { login } from "../services/authService";
-import { AuthContext } from "../contexts/AuthContext";
+import { register } from "../services/authService";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
-  const auth = useContext(AuthContext);
 
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] =
+    useState("");
+
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     setErrorMessage("");
 
-    if (!email.trim() || !password) {
-      setErrorMessage("Please enter your email and password.");
+    if (
+      !fullName.trim() ||
+      !email.trim() ||
+      !password ||
+      !confirmPassword
+    ) {
+      setErrorMessage("Please complete all fields.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setErrorMessage(
+        "Password must contain at least 6 characters."
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match.");
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const result = await login({
+      await register({
+        fullName: fullName.trim(),
         email: email.trim(),
         password,
       });
 
-      auth.login(result.token);
-
-      if (result.role === "Admin") {
-        navigate("/admin");
-      } else {
-        navigate("/dashboard");
-      }
+      navigate("/", {
+        state: {
+          message:
+            "Account created successfully. Please sign in.",
+        },
+      });
     } catch {
-      setErrorMessage("Invalid email or password.");
+      setErrorMessage(
+        "An account with this email may already exist."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -73,7 +94,7 @@ export default function LoginPage() {
                 textAlign: "center",
               }}
             >
-              SmartLend
+              Create Account
             </Typography>
 
             <Typography
@@ -83,8 +104,21 @@ export default function LoginPage() {
                 mb: 4,
               }}
             >
-              AI Loan Assessment Platform
+              Register to submit and track loan applications.
             </Typography>
+
+            <TextField
+              label="Full Name"
+              value={fullName}
+              onChange={(event) =>
+                setFullName(event.target.value)
+              }
+              disabled={submitting}
+              autoComplete="name"
+              fullWidth
+              required
+              margin="normal"
+            />
 
             <TextField
               label="Email"
@@ -107,13 +141,27 @@ export default function LoginPage() {
               onChange={(event) =>
                 setPassword(event.target.value)
               }
+              disabled={submitting}
+              autoComplete="new-password"
+              fullWidth
+              required
+              margin="normal"
+            />
+
+            <TextField
+              label="Confirm Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) =>
+                setConfirmPassword(event.target.value)
+              }
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
-                  handleLogin();
+                  handleRegister();
                 }
               }}
               disabled={submitting}
-              autoComplete="current-password"
+              autoComplete="new-password"
               fullWidth
               required
               margin="normal"
@@ -127,7 +175,7 @@ export default function LoginPage() {
 
             <Button
               variant="contained"
-              onClick={handleLogin}
+              onClick={handleRegister}
               disabled={submitting}
               fullWidth
               sx={{ mt: 3 }}
@@ -141,10 +189,10 @@ export default function LoginPage() {
                       mr: 1,
                     }}
                   />
-                  Signing In...
+                  Creating Account...
                 </>
               ) : (
-                "Sign In"
+                "Create Account"
               )}
             </Button>
 
@@ -155,10 +203,8 @@ export default function LoginPage() {
                 mt: 3,
               }}
             >
-              Don&apos;t have an account?{" "}
-              <Link to="/register">
-                Create an account
-              </Link>
+              Already have an account?{" "}
+              <Link to="/">Sign in</Link>
             </Typography>
           </CardContent>
         </Card>

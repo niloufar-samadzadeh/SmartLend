@@ -1,7 +1,8 @@
 import { Navigate } from "react-router-dom";
+import type { ReactNode } from "react";
 
 interface AdminRouteProps {
-  children: JSX.Element;
+    children: ReactNode;
 }
 
 export default function AdminRoute({

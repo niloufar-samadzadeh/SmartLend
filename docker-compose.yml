@@ -1,9 +1,6 @@
-version: '3.9'
-
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-
     container_name: smartlend-sql
 
     environment:
@@ -15,6 +12,85 @@ services:
 
     volumes:
       - sql_data:/var/opt/mssql
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+
+    restart: unless-stopped
+
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+
+    container_name: smartlend-ml
+
+    ports:
+      - "8001:8001"
+
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: SmartLend.Api/Dockerfile
+
+    container_name: smartlend-api
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+
+      ConnectionStrings__DefaultConnection: >-
+        Server=sqlserver,1433;
+        Database=SmartLendDb;
+        User Id=sa;
+        Password=${MSSQL_SA_PASSWORD};
+        TrustServerCertificate=True;
+        Encrypt=False;
+
+      Jwt__Key: "${JWT_KEY}"
+      Jwt__Issuer: "SmartLend.Api"
+      Jwt__Audience: "SmartLend.Client"
+      Jwt__ExpiryMinutes: "60"
+
+      Services__RiskScoringUrl: "http://ml-service:8001"
+
+      Cors__AllowedOrigins__0: "http://localhost:5173"
+
+    ports:
+      - "5123:8080"
+
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+      ml-service:
+        condition: service_started
+
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    container_name: smartlend-frontend
+
+    ports:
+      - "5173:80"
+
+    depends_on:
+      - api
+
+    restart: unless-stopped
 
 volumes:
   sql_data:

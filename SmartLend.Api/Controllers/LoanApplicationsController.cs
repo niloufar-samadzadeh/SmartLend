@@ -1,17 +1,16 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartLend.Api.DTOs;
-using SmartLend.Core.Entities;
-using SmartLend.Api.Services;
-using Microsoft.AspNetCore.Authorization;
-using SmartLend.Core.Enums;
-using System.Security.Claims;
 using SmartLend.Api.Mappers;
+using SmartLend.Api.Services;
+using SmartLend.Core.Enums;
 
 namespace SmartLend.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize]
+[Authorize]
 public class LoanApplicationsController : ControllerBase
 {
     private readonly LoanApplicationService _loanApplicationService;
@@ -23,8 +22,8 @@ public class LoanApplicationsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<LoanApplication>> Create(
-    CreateLoanApplicationRequest request)
+    public async Task<ActionResult<LoanApplicationResponse>> Create(
+        CreateLoanApplicationRequest request)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -39,14 +38,16 @@ public class LoanApplicationsController : ControllerBase
         var loanApplication =
             await _loanApplicationService.CreateAsync(request, userId);
 
+        var response = loanApplication.ToResponse();
+
         return CreatedAtAction(
             nameof(GetById),
             new { id = loanApplication.Id },
-            loanApplication);
+            response);
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<LoanApplication>> GetById(int id)
+    public async Task<ActionResult<LoanApplicationResponse>> GetById(int id)
     {
         var loanApplication =
             await _loanApplicationService.GetByIdAsync(id);
@@ -56,13 +57,13 @@ public class LoanApplicationsController : ControllerBase
             return NotFound();
         }
 
-        return Ok(loanApplication);
+        return Ok(loanApplication.ToResponse());
     }
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<List<LoanApplication>>> GetAll(
-    [FromQuery] LoanStatus? status)
+    public async Task<ActionResult<List<LoanApplicationResponse>>> GetAll(
+        [FromQuery] LoanStatus? status)
     {
         var applications =
             await _loanApplicationService.GetAllAsync(status);
@@ -72,11 +73,12 @@ public class LoanApplicationsController : ControllerBase
                 .Select(application => application.ToResponse())
         );
     }
+
     [HttpPatch("{id:int}/decision")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<LoanApplication>> UpdateDecision(
-    int id,
-    LoanDecisionRequest request)
+    public async Task<ActionResult<LoanApplicationResponse>> UpdateDecision(
+        int id,
+        LoanDecisionRequest request)
     {
         if (request.Status is not LoanStatus.Approved
             and not LoanStatus.Rejected)
@@ -97,8 +99,9 @@ public class LoanApplicationsController : ControllerBase
             return NotFound();
         }
 
-        return Ok(application);
+        return Ok(application.ToResponse());
     }
+
     [HttpGet("mine")]
     public async Task<ActionResult<List<LoanApplicationResponse>>> GetMine()
     {

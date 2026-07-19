@@ -44,7 +44,7 @@ var connectionString =
         "Database connection string is missing.");
 
 builder.Services.AddDbContext<SmartLendDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<LoanApplicationService>();

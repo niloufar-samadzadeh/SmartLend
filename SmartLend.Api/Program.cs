@@ -6,6 +6,7 @@ using Microsoft.OpenApi;
 using SmartLend.Api.Clients;
 using SmartLend.Api.Services;
 using SmartLend.Infrastructure.Data;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,10 +39,45 @@ builder.Services.AddHttpClient<RiskScoringClient>(client =>
     client.BaseAddress = new Uri(riskScoringUrl);
 });
 
-var connectionString =
+var rawConnectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
         "Database connection string is missing.");
+
+string connectionString;
+
+if (rawConnectionString.StartsWith("postgres://",
+        StringComparison.OrdinalIgnoreCase) ||
+    rawConnectionString.StartsWith("postgresql://",
+        StringComparison.OrdinalIgnoreCase))
+{
+    var databaseUri = new Uri(rawConnectionString);
+
+    var userInfo = databaseUri.UserInfo.Split(':', 2);
+
+    if (userInfo.Length != 2)
+    {
+        throw new InvalidOperationException(
+            "PostgreSQL connection URL is invalid.");
+    }
+
+    var connectionStringBuilder =
+        new NpgsqlConnectionStringBuilder
+        {
+            Host = databaseUri.Host,
+            Port = databaseUri.Port,
+            Database = databaseUri.AbsolutePath.Trim('/'),
+            Username = Uri.UnescapeDataString(userInfo[0]),
+            Password = Uri.UnescapeDataString(userInfo[1]),
+            SslMode = SslMode.Disable
+        };
+
+    connectionString = connectionStringBuilder.ConnectionString;
+}
+else
+{
+    connectionString = rawConnectionString;
+}
 
 builder.Services.AddDbContext<SmartLendDbContext>(options =>
     options.UseNpgsql(connectionString));

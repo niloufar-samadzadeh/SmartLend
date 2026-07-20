@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { getApiErrorMessage } from "../utils/getApiErrorMessage";
 import {
   Alert,
   Box,
@@ -66,9 +67,12 @@ export default function RegisterPage() {
             "Account created successfully. Please sign in.",
         },
       });
-    } catch {
+    } catch (error: unknown) {
       setErrorMessage(
-        "An account with this email may already exist."
+        getApiErrorMessage(
+          error,
+          "Unable to create your account."
+        )
       );
     } finally {
       setSubmitting(false);

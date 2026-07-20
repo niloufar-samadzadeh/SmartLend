@@ -1,5 +1,9 @@
-import { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useContext, useEffect, useState } from "react";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import {
   Alert,
   Box,
@@ -15,20 +19,44 @@ import {
 import { login } from "../services/authService";
 import { AuthContext } from "../contexts/AuthContext";
 
+type LoginLocationState = {
+  message?: string;
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const auth = useContext(AuthContext);
+
+  const successMessage =
+    (location.state as LoginLocationState | null)?.message ??
+    "";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  useEffect(() => {
+    if (successMessage) {
+      navigate(location.pathname, {
+        replace: true,
+        state: null,
+      });
+    }
+  }, [
+    location.pathname,
+    navigate,
+    successMessage,
+  ]);
+
   const handleLogin = async () => {
     setErrorMessage("");
 
     if (!email.trim() || !password) {
-      setErrorMessage("Please enter your email and password.");
+      setErrorMessage(
+        "Please enter your email and password."
+      );
       return;
     }
 
@@ -85,6 +113,12 @@ export default function LoginPage() {
             >
               AI Loan Assessment Platform
             </Typography>
+
+            {successMessage && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                {successMessage}
+              </Alert>
+            )}
 
             <TextField
               label="Email"

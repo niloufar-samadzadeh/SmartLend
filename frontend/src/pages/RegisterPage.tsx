@@ -90,12 +90,23 @@ export default function RegisterPage() {
     <AuthLayout>
       <Card
         sx={{
+          position: "relative",
+          overflow: "visible",
           border:
             "1px solid rgba(255,255,255,0.92)",
-          backgroundColor: "rgba(255,255,255,0.84)",
+          backgroundColor: "rgba(255,255,255,0.82)",
           backdropFilter: "blur(24px)",
           boxShadow:
             "0 34px 90px rgba(32,55,110,0.17)",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            inset: -1,
+            zIndex: -1,
+            borderRadius: "21px",
+            background:
+              "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(124,58,237,0.08), rgba(6,182,212,0.13))",
+          },
         }}
       >
         <CardContent

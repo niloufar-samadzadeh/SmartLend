@@ -39,13 +39,16 @@ The application allows users to create accounts, submit loan applications, revie
 
 ![SmartLend login page](docs/screenshots/login.png)
 
+### Registration
+![SmartLend Registration Page](docs/screenshots/register.png)
+
 ### User Dashboard
 
-![SmartLend user dashboard](docs/screenshots/dashboard.png)
+![SmartLend user dashboard](docs/screenshots/user-dashboard.png)
 
 ### Loan Application
 
-![SmartLend loan application form](docs/screenshots/application.png)
+![SmartLend loan application form](docs/screenshots/loan-application.png)
 
 ### Admin Dashboard
 

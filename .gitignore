@@ -480,4 +480,12 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
 .env
+
+
+# Python virtual environments
+.venv/
+venv/
+ml-service/.venv/
+

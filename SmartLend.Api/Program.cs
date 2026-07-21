@@ -7,10 +7,37 @@ using SmartLend.Api.Clients;
 using SmartLend.Api.Services;
 using SmartLend.Infrastructure.Data;
 using Npgsql;
+using Microsoft.AspNetCore.Mvc;
+using SmartLend.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(entry => entry.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    entry => entry.Key,
+                    entry => entry.Value!.Errors
+                        .Select(error =>
+                            string.IsNullOrWhiteSpace(error.ErrorMessage)
+                                ? "The supplied value is invalid."
+                                : error.ErrorMessage)
+                        .ToArray());
+
+            var response = new
+            {
+                message = "Validation failed.",
+                errors
+            };
+
+            return new BadRequestObjectResult(response);
+        };
+    });
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 
@@ -134,6 +161,8 @@ using (var scope = app.Services.CreateScope())
 
     await dbContext.Database.MigrateAsync();
 }
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

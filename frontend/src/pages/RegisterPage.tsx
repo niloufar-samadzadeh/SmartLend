@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getApiErrorMessage } from "../utils/getApiErrorMessage";
+import FeedbackAlert from "../components/FeedbackAlert";
+import {
+  AlternateEmailRounded,
+  ArrowForwardRounded,
+  LockRounded,
+  PersonRounded,
+} from "@mui/icons-material";
 import {
   Alert,
   Box,
@@ -8,11 +14,13 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  Container,
+  InputAdornment,
   TextField,
   Typography,
 } from "@mui/material";
 
+import AuthLayout from "../components/auth/AuthLayout";
+import { getApiErrorMessage } from "../utils/getApiErrorMessage";
 import { register } from "../services/authService";
 
 export default function RegisterPage() {
@@ -80,139 +88,215 @@ export default function RegisterPage() {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box
+    <AuthLayout>
+      <Card
         sx={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          py: 4,
+          border:
+            "1px solid rgba(255,255,255,0.92)",
+          backgroundColor: "rgba(255,255,255,0.84)",
+          backdropFilter: "blur(24px)",
+          boxShadow:
+            "0 34px 90px rgba(32,55,110,0.17)",
         }}
       >
-        <Card sx={{ width: "100%", p: 2 }}>
-          <CardContent>
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 700,
-                textAlign: "center",
-              }}
-            >
-              Create Account
-            </Typography>
+        <CardContent
+          sx={{
+            p: {
+              xs: 3,
+              sm: 5,
+            },
+          }}
+        >
+          <Typography
+            variant="h3"
+            sx={{
+              fontSize: {
+                xs: "2rem",
+                sm: "2.35rem",
+              },
+              color: "#0B163F",
+            }}
+          >
+            Create your account
+          </Typography>
 
-            <Typography
-              sx={{
-                color: "text.secondary",
-                textAlign: "center",
-                mb: 4,
-              }}
-            >
-              Register to submit and track loan applications.
-            </Typography>
+          <Typography
+            sx={{
+              color: "text.secondary",
+              mt: 1,
+              mb: 3,
+            }}
+          >
+            Start submitting and tracking intelligent loan
+            assessments.
+          </Typography>
 
-            <TextField
-              label="Full Name"
-              value={fullName}
-              onChange={(event) =>
-                setFullName(event.target.value)
+          <TextField
+            label="Full name"
+            value={fullName}
+            onChange={(event) =>
+              setFullName(event.target.value)
+            }
+            disabled={submitting}
+            autoComplete="name"
+            fullWidth
+            required
+            margin="dense"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PersonRounded
+                      sx={{ color: "#94A3B8" }}
+                    />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+
+          <TextField
+            label="Email address"
+            type="email"
+            value={email}
+            onChange={(event) =>
+              setEmail(event.target.value)
+            }
+            disabled={submitting}
+            autoComplete="email"
+            fullWidth
+            required
+            margin="dense"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AlternateEmailRounded
+                      sx={{ color: "#94A3B8" }}
+                    />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+
+          <TextField
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(event) =>
+              setPassword(event.target.value)
+            }
+            disabled={submitting}
+            autoComplete="new-password"
+            fullWidth
+            required
+            margin="dense"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockRounded
+                      sx={{ color: "#94A3B8" }}
+                    />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+
+          <TextField
+            label="Confirm password"
+            type="password"
+            value={confirmPassword}
+            onChange={(event) =>
+              setConfirmPassword(event.target.value)
+            }
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                handleRegister();
               }
-              disabled={submitting}
-              autoComplete="name"
-              fullWidth
-              required
-              margin="normal"
-            />
+            }}
+            disabled={submitting}
+            autoComplete="new-password"
+            fullWidth
+            required
+            margin="dense"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockRounded
+                      sx={{ color: "#94A3B8" }}
+                    />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
 
-            <TextField
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(event) =>
-                setEmail(event.target.value)
-              }
-              disabled={submitting}
-              autoComplete="email"
-              fullWidth
-              required
-              margin="normal"
-            />
-
-            <TextField
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(event) =>
-                setPassword(event.target.value)
-              }
-              disabled={submitting}
-              autoComplete="new-password"
-              fullWidth
-              required
-              margin="normal"
-            />
-
-            <TextField
-              label="Confirm Password"
-              type="password"
-              value={confirmPassword}
-              onChange={(event) =>
-                setConfirmPassword(event.target.value)
-              }
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  handleRegister();
-                }
-              }}
-              disabled={submitting}
-              autoComplete="new-password"
-              fullWidth
-              required
-              margin="normal"
-            />
-
-            {errorMessage && (
-              <Alert severity="error" sx={{ mt: 2 }}>
+          {errorMessage && (
+            <Box sx={{ mt: 2 }}>
+              <FeedbackAlert
+                severity="error"
+                title="Account not created"
+              >
                 {errorMessage}
-              </Alert>
+              </FeedbackAlert>
+            </Box>
+          )}
+
+          <Button
+            variant="contained"
+            onClick={handleRegister}
+            disabled={submitting}
+            endIcon={
+              !submitting ? (
+                <ArrowForwardRounded />
+              ) : undefined
+            }
+            fullWidth
+            sx={{
+              mt: 3,
+              minHeight: 56,
+              borderRadius: 3.5,
+              background:
+                "linear-gradient(110deg, #2563EB 0%, #4F46E5 48%, #7C3AED 100%)",
+              boxShadow:
+                "0 16px 34px rgba(79,70,229,0.28)",
+            }}
+          >
+            {submitting ? (
+              <>
+                <CircularProgress
+                  size={20}
+                  sx={{
+                    color: "inherit",
+                    mr: 1,
+                  }}
+                />
+                Creating account...
+              </>
+            ) : (
+              "Create account"
             )}
+          </Button>
 
-            <Button
-              variant="contained"
-              onClick={handleRegister}
-              disabled={submitting}
-              fullWidth
-              sx={{ mt: 3 }}
-            >
-              {submitting ? (
-                <>
-                  <CircularProgress
-                    size={20}
-                    sx={{
-                      color: "inherit",
-                      mr: 1,
-                    }}
-                  />
-                  Creating Account...
-                </>
-              ) : (
-                "Create Account"
-              )}
-            </Button>
-
-            <Typography
-              sx={{
-                textAlign: "center",
-                color: "text.secondary",
-                mt: 3,
-              }}
-            >
+          <Box
+            sx={{
+              mt: 3,
+              pt: 3,
+              borderTop: "1px solid #E8EDF5",
+              textAlign: "center",
+            }}
+          >
+            <Typography color="text.secondary">
               Already have an account?{" "}
               <Link to="/">Sign in</Link>
             </Typography>
-          </CardContent>
-        </Card>
-      </Box>
-    </Container>
+          </Box>
+        </CardContent>
+      </Card>
+    </AuthLayout>
   );
 }

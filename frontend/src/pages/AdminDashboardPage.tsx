@@ -1,26 +1,33 @@
-import { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
-  AppBar,
+  AssignmentRounded,
+  CheckCircleRounded,
+  HourglassTopRounded,
+  CancelRounded,
+  DoneRounded,
+  CloseRounded,
+} from "@mui/icons-material";
+import {
   Box,
   Button,
   Card,
   CardContent,
   Chip,
   CircularProgress,
-  Container,
-  Stack,
+  Grid,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  Toolbar,
   Typography,
 } from "@mui/material";
 
-import { AuthContext } from "../contexts/AuthContext";
+import AppLayout from "../components/AppLayout";
+import FeedbackAlert from "../components/FeedbackAlert";
+import PageHeader from "../components/PageHeader";
+import StatCard from "../components/StatCard";
 import {
   getAllApplications,
   updateLoanDecision,
@@ -28,12 +35,12 @@ import {
 import type { LoanApplication } from "../types/loan";
 
 export default function AdminDashboardPage() {
-  const { logout } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  const [applications, setApplications] = useState<LoanApplication[]>([]);
+  const [applications, setApplications] =
+    useState<LoanApplication[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] =
+    useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     loadApplications();
@@ -41,147 +48,293 @@ export default function AdminDashboardPage() {
 
   async function loadApplications() {
     try {
-      setError("");
+      setErrorMessage("");
       const data = await getAllApplications();
       setApplications(data);
     } catch {
-      setError("Unable to load loan applications.");
+      setErrorMessage(
+        "The application list could not be loaded. Please refresh the page."
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleDecision(id: number, status: 2 | 3) {
+  async function handleDecision(
+    id: number,
+    status: 2 | 3
+  ) {
     try {
+      setErrorMessage("");
+      setUpdatingId(id);
       await updateLoanDecision(id, status);
       await loadApplications();
     } catch {
-      setError("Unable to update the loan decision.");
+      setErrorMessage(
+        "The loan decision could not be updated. Please try again."
+      );
+    } finally {
+      setUpdatingId(null);
     }
   }
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
+  const stats = useMemo(
+    () => ({
+      total: applications.length,
+      approved: applications.filter(
+        (item) => item.status === "Approved"
+      ).length,
+      pending: applications.filter(
+        (item) => item.status === "Pending"
+      ).length,
+      rejected: applications.filter(
+        (item) => item.status === "Rejected"
+      ).length,
+    }),
+    [applications]
+  );
 
   const getStatusChip = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return <Chip label="Approved" color="success" />;
-      case "Rejected":
-        return <Chip label="Rejected" color="error" />;
-      default:
-        return <Chip label="Pending" color="warning" />;
-    }
+    const styles = {
+      Approved: {
+        color: "#15803D",
+        backgroundColor: "rgba(34,197,94,0.11)",
+      },
+      Rejected: {
+        color: "#B91C1C",
+        backgroundColor: "rgba(239,68,68,0.1)",
+      },
+      Pending: {
+        color: "#A16207",
+        backgroundColor: "rgba(245,158,11,0.12)",
+      },
+    };
+
+    const style =
+      styles[status as keyof typeof styles] ??
+      styles.Pending;
+
+    return (
+      <Chip
+        label={status}
+        size="small"
+        sx={{
+          fontWeight: 700,
+          color: style.color,
+          backgroundColor: style.backgroundColor,
+        }}
+      />
+    );
   };
 
   return (
-    <>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            SmartLend Admin
-          </Typography>
+    <AppLayout admin>
+      <PageHeader
+        eyebrow="Administrative workspace"
+        title="Loan management"
+        description="Review risk assessments and manage lending decisions across all submitted applications."
+      />
 
-          <Button color="inherit" onClick={handleLogout}>
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
-
-      <Container maxWidth="lg">
-        <Box sx={{ py: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            Admin Dashboard
-          </Typography>
-
-          <Typography sx={{ color: "text.secondary", mt: 1 }}>
-            Review and manage all loan applications.
-          </Typography>
-
-          {error && (
-            <Alert severity="error" sx={{ mt: 3 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Card sx={{ mt: 4 }}>
-            <CardContent>
-              {loading ? (
-                <CircularProgress />
-              ) : (
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>ID</TableCell>
-                      <TableCell>Income</TableCell>
-                      <TableCell>Loan Amount</TableCell>
-                      <TableCell>Risk</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-
-                  <TableBody>
-                    {applications.map((application) => (
-                      <TableRow key={application.id}>
-                        <TableCell>{application.id}</TableCell>
-
-                        <TableCell>
-                          ${application.monthlyIncome.toLocaleString()}
-                        </TableCell>
-
-                        <TableCell>
-                          ${application.loanAmount.toLocaleString()}
-                        </TableCell>
-
-                        <TableCell>
-                          {application.riskScore === null
-                            ? "N/A"
-                            : application.riskScore.toFixed(2)}
-                        </TableCell>
-
-                        <TableCell>
-                          {getStatusChip(application.status)}
-                        </TableCell>
-
-                        <TableCell>
-                          <Stack direction="row" spacing={1}>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              color="success"
-                              disabled={application.status === "Approved"}
-                              onClick={() =>
-                                handleDecision(application.id, 2)
-                              }
-                            >
-                              Approve
-                            </Button>
-
-                            <Button
-                              size="small"
-                              variant="contained"
-                              color="error"
-                              disabled={application.status === "Rejected"}
-                              onClick={() =>
-                                handleDecision(application.id, 3)
-                              }
-                            >
-                              Reject
-                            </Button>
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+      {errorMessage && (
+        <Box sx={{ mb: 3 }}>
+          <FeedbackAlert
+            severity="error"
+            title="Action unsuccessful"
+          >
+            {errorMessage}
+          </FeedbackAlert>
         </Box>
-      </Container>
-    </>
+      )}
+
+      <Grid container spacing={2.5}>
+        <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+          <StatCard
+            label="All applications"
+            value={stats.total}
+            icon={<AssignmentRounded />}
+            accent="#2563EB"
+            softAccent="rgba(37,99,235,0.1)"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+          <StatCard
+            label="Approved"
+            value={stats.approved}
+            icon={<CheckCircleRounded />}
+            accent="#16A34A"
+            softAccent="rgba(34,197,94,0.1)"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+          <StatCard
+            label="Pending review"
+            value={stats.pending}
+            icon={<HourglassTopRounded />}
+            accent="#D97706"
+            softAccent="rgba(245,158,11,0.11)"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+          <StatCard
+            label="Rejected"
+            value={stats.rejected}
+            icon={<CancelRounded />}
+            accent="#DC2626"
+            softAccent="rgba(239,68,68,0.09)"
+          />
+        </Grid>
+      </Grid>
+
+      <Card sx={{ mt: 3.5, overflow: "hidden" }}>
+        <CardContent sx={{ p: 0 }}>
+          <Box
+            sx={{
+              px: { xs: 2.5, sm: 3.5 },
+              py: 3,
+              borderBottom: "1px solid #EDF1F7",
+            }}
+          >
+            <Typography variant="h6">
+              Application review queue
+            </Typography>
+
+            <Typography
+              sx={{
+                mt: 0.4,
+                color: "text.secondary",
+                fontSize: "0.88rem",
+              }}
+            >
+              Approve or reject applications based on their
+              submitted information and calculated risk.
+            </Typography>
+          </Box>
+
+          {loading ? (
+            <Box
+              sx={{
+                minHeight: 280,
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          ) : (
+            <TableContainer>
+              <Table sx={{ minWidth: 900 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Application</TableCell>
+                    <TableCell>Income</TableCell>
+                    <TableCell>Loan amount</TableCell>
+                    <TableCell>Risk score</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell align="right">
+                      Decision
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {applications.map((application) => (
+                    <TableRow
+                      key={application.id}
+                      sx={{
+                        "&:last-child td": {
+                          borderBottom: 0,
+                        },
+
+                        "&:hover": {
+                          backgroundColor:
+                            "rgba(248,250,252,0.8)",
+                        },
+                      }}
+                    >
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 700 }}>
+                          #{application.id}
+                        </Typography>
+                      </TableCell>
+
+                      <TableCell>
+                        $
+                        {application.monthlyIncome.toLocaleString()}
+                      </TableCell>
+
+                      <TableCell>
+                        $
+                        {application.loanAmount.toLocaleString()}
+                      </TableCell>
+
+                      <TableCell>
+                        {application.riskScore === null
+                          ? "Not available"
+                          : application.riskScore.toFixed(2)}
+                      </TableCell>
+
+                      <TableCell>
+                        {getStatusChip(application.status)}
+                      </TableCell>
+
+                      <TableCell align="right">
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 1,
+                          }}
+                        >
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="success"
+                            startIcon={<DoneRounded />}
+                            disabled={
+                              updatingId === application.id ||
+                              application.status === "Approved"
+                            }
+                            onClick={() =>
+                              handleDecision(
+                                application.id,
+                                2
+                              )
+                            }
+                          >
+                            Approve
+                          </Button>
+
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            startIcon={<CloseRounded />}
+                            disabled={
+                              updatingId === application.id ||
+                              application.status === "Rejected"
+                            }
+                            onClick={() =>
+                              handleDecision(
+                                application.id,
+                                3
+                              )
+                            }
+                          >
+                            Reject
+                          </Button>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </CardContent>
+      </Card>
+    </AppLayout>
   );
 }

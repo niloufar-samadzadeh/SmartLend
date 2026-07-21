@@ -1,36 +1,44 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  AppBar,
+  AddRounded,
+  AssignmentRounded,
+  CheckCircleRounded,
+  HourglassTopRounded,
+  CancelRounded,
+  InboxRounded,
+} from "@mui/icons-material";
+import {
   Box,
   Button,
   Card,
   CardContent,
   Chip,
   CircularProgress,
-  Container,
   Grid,
-  Stack,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  Toolbar,
   Typography,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 
-import { AuthContext } from "../contexts/AuthContext";
+import AppLayout from "../components/AppLayout";
+import FeedbackAlert from "../components/FeedbackAlert";
+import PageHeader from "../components/PageHeader";
+import StatCard from "../components/StatCard";
 import { getMyApplications } from "../services/loanService";
 import type { LoanApplication } from "../types/loan";
 
 export default function DashboardPage() {
-  const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [applications, setApplications] = useState<LoanApplication[]>([]);
+  const [applications, setApplications] =
+    useState<LoanApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     loadApplications();
@@ -38,206 +46,291 @@ export default function DashboardPage() {
 
   async function loadApplications() {
     try {
+      setErrorMessage("");
       const data = await getMyApplications();
       setApplications(data);
+    } catch {
+      setErrorMessage(
+        "We could not load your applications. Please refresh the page and try again."
+      );
     } finally {
       setLoading(false);
     }
   }
 
   const stats = useMemo(() => {
-    const approved = applications.filter(
-      (application) => application.status === "Approved"
-    ).length;
-
-    const pending = applications.filter(
-      (application) => application.status === "Pending"
-    ).length;
-
-    const rejected = applications.filter(
-      (application) => application.status === "Rejected"
-    ).length;
-
     return {
       total: applications.length,
-      approved,
-      pending,
-      rejected,
+      approved: applications.filter(
+        (application) => application.status === "Approved"
+      ).length,
+      pending: applications.filter(
+        (application) => application.status === "Pending"
+      ).length,
+      rejected: applications.filter(
+        (application) => application.status === "Rejected"
+      ).length,
     };
   }, [applications]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
-
   const getStatusChip = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return <Chip label="Approved" color="success" />;
+    const styles = {
+      Approved: {
+        color: "#15803D",
+        backgroundColor: "rgba(34,197,94,0.11)",
+      },
+      Rejected: {
+        color: "#B91C1C",
+        backgroundColor: "rgba(239,68,68,0.1)",
+      },
+      Pending: {
+        color: "#A16207",
+        backgroundColor: "rgba(245,158,11,0.12)",
+      },
+    };
 
-      case "Rejected":
-        return <Chip label="Rejected" color="error" />;
+    const style =
+      styles[status as keyof typeof styles] ??
+      styles.Pending;
 
-      default:
-        return <Chip label="Pending" color="warning" />;
-    }
+    return (
+      <Chip
+        label={status}
+        size="small"
+        sx={{
+          fontWeight: 700,
+          color: style.color,
+          backgroundColor: style.backgroundColor,
+          border: "1px solid rgba(255,255,255,0.4)",
+        }}
+      />
+    );
   };
-
-  const statCards = [
-    { label: "Applications", value: stats.total },
-    { label: "Approved", value: stats.approved },
-    { label: "Pending", value: stats.pending },
-    { label: "Rejected", value: stats.rejected },
-  ];
 
   return (
-    <>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            SmartLend
-          </Typography>
-
-          <Button color="inherit" onClick={handleLogout}>
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
-
-      <Container maxWidth="lg">
-        <Box sx={{ py: 4 }}>
-          <Stack
+    <AppLayout>
+      <PageHeader
+        eyebrow="Personal lending workspace"
+        title="Welcome back"
+        description="Track your applications, review lending decisions and submit a new request from one place."
+        action={
+          <Button
+            variant="contained"
+            startIcon={<AddRounded />}
+            onClick={() => navigate("/apply")}
             sx={{
-              flexDirection: { xs: "column", sm: "row" },
+              minHeight: 52,
+              borderRadius: 3.5,
+            }}
+          >
+            New application
+          </Button>
+        }
+      />
+
+      {errorMessage && (
+        <Box sx={{ mb: 3 }}>
+          <FeedbackAlert
+            severity="error"
+            title="Applications unavailable"
+          >
+            {errorMessage}
+          </FeedbackAlert>
+        </Box>
+      )}
+
+      <Grid container spacing={2.5}>
+        <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+          <StatCard
+            label="Total applications"
+            value={stats.total}
+            icon={<AssignmentRounded />}
+            accent="#2563EB"
+            softAccent="rgba(37,99,235,0.1)"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+          <StatCard
+            label="Approved"
+            value={stats.approved}
+            icon={<CheckCircleRounded />}
+            accent="#16A34A"
+            softAccent="rgba(34,197,94,0.1)"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+          <StatCard
+            label="Pending review"
+            value={stats.pending}
+            icon={<HourglassTopRounded />}
+            accent="#D97706"
+            softAccent="rgba(245,158,11,0.11)"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, xl: 3 }}>
+          <StatCard
+            label="Rejected"
+            value={stats.rejected}
+            icon={<CancelRounded />}
+            accent="#DC2626"
+            softAccent="rgba(239,68,68,0.09)"
+          />
+        </Grid>
+      </Grid>
+
+      <Card sx={{ mt: 3.5, overflow: "hidden" }}>
+        <CardContent sx={{ p: 0 }}>
+          <Box
+            sx={{
+              px: { xs: 2.5, sm: 3.5 },
+              py: 3,
+              display: "flex",
               justifyContent: "space-between",
-              alignItems: { xs: "stretch", sm: "center" },
-              gap: 2,
+              alignItems: "center",
+              borderBottom: "1px solid #EDF1F7",
             }}
           >
             <Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                }}
-              >
-                Dashboard
+              <Typography variant="h6">
+                Recent applications
               </Typography>
 
               <Typography
                 sx={{
+                  mt: 0.4,
                   color: "text.secondary",
-                  mt: 1,
+                  fontSize: "0.88rem",
                 }}
               >
-                Manage your loan applications.
+                Your latest loan submissions and decisions.
               </Typography>
             </Box>
+          </Box>
 
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => navigate("/apply")}
+          {loading ? (
+            <Box
+              sx={{
+                minHeight: 260,
+                display: "grid",
+                placeItems: "center",
+              }}
             >
-              New Loan Application
-            </Button>
-          </Stack>
-
-          <Grid container spacing={2} sx={{ mt: 2 }}>
-            {statCards.map((stat) => (
-              <Grid key={stat.label} size={{ xs: 12, sm: 6, md: 3 }}>
-                <Card>
-                  <CardContent>
-                    <Typography
-                      sx={{
-                        color: "text.secondary",
-                      }}
-                    >
-                      {stat.label}
-                    </Typography>
-
-                    <Typography
-                      variant="h4"
-                      sx={{
-                        fontWeight: 700,
-                        mt: 1,
-                      }}
-                    >
-                      {stat.value}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-
-          <Card sx={{ mt: 4 }}>
-            <CardContent>
-              <Typography
-                variant="h6"
+              <CircularProgress />
+            </Box>
+          ) : applications.length === 0 ? (
+            <Box
+              sx={{
+                py: 8,
+                px: 3,
+                textAlign: "center",
+              }}
+            >
+              <Box
                 sx={{
-                  mb: 3,
+                  width: 70,
+                  height: 70,
+                  display: "grid",
+                  placeItems: "center",
+                  mx: "auto",
+                  borderRadius: 4,
+                  color: "#6366F1",
+                  background:
+                    "linear-gradient(135deg, rgba(37,99,235,0.1), rgba(124,58,237,0.1))",
                 }}
               >
-                My Applications
+                <InboxRounded sx={{ fontSize: 34 }} />
+              </Box>
+
+              <Typography
+                variant="h6"
+                sx={{ mt: 2.2 }}
+              >
+                No applications yet
               </Typography>
 
-              {loading ? (
-                <CircularProgress />
-              ) : applications.length === 0 ? (
-                <Typography
-                  sx={{
-                    color: "text.secondary",
-                  }}
-                >
-                  You have not submitted any loan applications yet.
-                </Typography>
-              ) : (
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>ID</TableCell>
-                      <TableCell>Amount</TableCell>
-                      <TableCell>Risk</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Submitted</TableCell>
+              <Typography
+                sx={{
+                  mt: 0.7,
+                  color: "text.secondary",
+                }}
+              >
+                Submit your first application to receive an AI
+                risk assessment.
+              </Typography>
+
+              <Button
+                variant="contained"
+                startIcon={<AddRounded />}
+                onClick={() => navigate("/apply")}
+                sx={{ mt: 2.5 }}
+              >
+                Start application
+              </Button>
+            </Box>
+          ) : (
+            <TableContainer>
+              <Table sx={{ minWidth: 720 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Application</TableCell>
+                    <TableCell>Loan amount</TableCell>
+                    <TableCell>Risk score</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Submitted</TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {applications.map((application) => (
+                    <TableRow
+                      key={application.id}
+                      sx={{
+                        "&:last-child td": {
+                          borderBottom: 0,
+                        },
+
+                        "&:hover": {
+                          backgroundColor:
+                            "rgba(248,250,252,0.8)",
+                        },
+                      }}
+                    >
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 700 }}>
+                          #{application.id}
+                        </Typography>
+                      </TableCell>
+
+                      <TableCell>
+                        ${application.loanAmount.toLocaleString()}
+                      </TableCell>
+
+                      <TableCell>
+                        {application.riskScore === null
+                          ? "Not available"
+                          : application.riskScore.toFixed(2)}
+                      </TableCell>
+
+                      <TableCell>
+                        {getStatusChip(application.status)}
+                      </TableCell>
+
+                      <TableCell>
+                        {new Date(
+                          application.submittedAt
+                        ).toLocaleDateString()}
+                      </TableCell>
                     </TableRow>
-                  </TableHead>
-
-                  <TableBody>
-                    {applications.map((application) => (
-                      <TableRow key={application.id}>
-                        <TableCell>{application.id}</TableCell>
-
-                        <TableCell>
-                          ${application.loanAmount.toLocaleString()}
-                        </TableCell>
-
-                        <TableCell>
-                          {application.riskScore === null
-                            ? "N/A"
-                            : application.riskScore.toFixed(2)}
-                        </TableCell>
-
-                        <TableCell>
-                          {getStatusChip(application.status)}
-                        </TableCell>
-
-                        <TableCell>
-                          {new Date(
-                            application.submittedAt
-                          ).toLocaleDateString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </Box>
-      </Container>
-    </>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </CardContent>
+      </Card>
+    </AppLayout>
   );
 }

@@ -1,21 +1,29 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Alert,
+  ArrowBackRounded,
+  AutoAwesomeRounded,
+  CheckCircleRounded,
+  SendRounded,
+} from "@mui/icons-material";
+import {
   Box,
   Button,
   Card,
   CardContent,
   CircularProgress,
-  Container,
+  Grid,
   MenuItem,
   Snackbar,
-  Stack,
   TextField,
   Typography,
 } from "@mui/material";
 
+import AppLayout from "../components/AppLayout";
+import FeedbackAlert from "../components/FeedbackAlert";
+import PageHeader from "../components/PageHeader";
 import { createLoanApplication } from "../services/loanService";
+import { getApiErrorMessage } from "../utils/getApiErrorMessage";
 
 interface SubmissionResult {
   riskScore: number | null;
@@ -28,7 +36,8 @@ export default function LoanApplicationPage() {
   const [monthlyIncome, setMonthlyIncome] = useState("");
   const [employmentStatus, setEmploymentStatus] =
     useState("Full-time");
-  const [employmentYears, setEmploymentYears] = useState("");
+  const [employmentYears, setEmploymentYears] =
+    useState("");
   const [loanAmount, setLoanAmount] = useState("");
   const [loanPurpose, setLoanPurpose] = useState("");
   const [existingDebt, setExistingDebt] = useState("");
@@ -47,14 +56,16 @@ export default function LoanApplicationPage() {
     setResult(null);
 
     if (
-      !monthlyIncome ||
-      !employmentYears ||
-      !loanAmount ||
+      monthlyIncome === "" ||
+      employmentYears === "" ||
+      loanAmount === "" ||
       !loanPurpose.trim() ||
-      !existingDebt ||
-      !creditHistoryMonths
+      existingDebt === "" ||
+      creditHistoryMonths === ""
     ) {
-      setErrorMessage("Please complete all required fields.");
+      setErrorMessage(
+        "Please complete all required fields before submitting the application."
+      );
       return;
     }
 
@@ -77,155 +88,226 @@ export default function LoanApplicationPage() {
       });
 
       setSuccessMessage(
-        "Loan application submitted successfully."
+        "Your loan application was submitted successfully."
       );
-    } catch (error) {
-      console.error(error);
+    } catch (error: unknown) {
       setErrorMessage(
-        "The application could not be submitted. Please try again."
+        getApiErrorMessage(
+          error,
+          "The application could not be submitted. Please review your information and try again."
+        )
       );
     } finally {
       setSubmitting(false);
     }
   };
 
-  const getResultSeverity = () => {
-    if (result?.status === "Approved") {
-      return "success";
-    }
-
-    if (result?.status === "Rejected") {
-      return "error";
-    }
-
-    return "warning";
-  };
+  const resultSeverity =
+    result?.status === "Approved"
+      ? "success"
+      : result?.status === "Rejected"
+        ? "error"
+        : "warning";
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ py: 4 }}>
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-          }}
-        >
-          New Loan Application
-        </Typography>
+    <AppLayout>
+      <PageHeader
+        eyebrow="AI-powered assessment"
+        title="New loan application"
+        description="Provide your financial and employment information to receive an automated risk assessment."
+        action={
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackRounded />}
+            onClick={() => navigate("/dashboard")}
+          >
+            Dashboard
+          </Button>
+        }
+      />
 
-        <Typography
-          sx={{
-            color: "text.secondary",
-            mt: 1,
-          }}
-        >
-          Complete the form to receive an automated risk
-          assessment.
-        </Typography>
-
-        <Card sx={{ mt: 4 }}>
-          <CardContent>
-            <Stack spacing={3}>
-              <TextField
-                label="Monthly Income"
-                type="number"
-                value={monthlyIncome}
-                onChange={(event) =>
-                  setMonthlyIncome(event.target.value)
-                }
-                required
-                fullWidth
-              />
-
-              <TextField
-                select
-                label="Employment Status"
-                value={employmentStatus}
-                onChange={(event) =>
-                  setEmploymentStatus(event.target.value)
-                }
-                required
-                fullWidth
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <Card>
+            <CardContent
+              sx={{
+                p: {
+                  xs: 2.5,
+                  sm: 4,
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  mb: 3,
+                }}
               >
-                <MenuItem value="Full-time">
-                  Full-time
-                </MenuItem>
-                <MenuItem value="Part-time">
-                  Part-time
-                </MenuItem>
-                <MenuItem value="Self-employed">
-                  Self-employed
-                </MenuItem>
-                <MenuItem value="Unemployed">
-                  Unemployed
-                </MenuItem>
-              </TextField>
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    display: "grid",
+                    placeItems: "center",
+                    borderRadius: 3,
+                    color: "#4F46E5",
+                    backgroundColor:
+                      "rgba(99,102,241,0.1)",
+                  }}
+                >
+                  <AutoAwesomeRounded />
+                </Box>
 
-              <TextField
-                label="Years of Employment"
-                type="number"
-                value={employmentYears}
-                onChange={(event) =>
-                  setEmploymentYears(event.target.value)
-                }
-                required
-                fullWidth
-              />
+                <Box>
+                  <Typography variant="h6">
+                    Application details
+                  </Typography>
 
-              <TextField
-                label="Loan Amount"
-                type="number"
-                value={loanAmount}
-                onChange={(event) =>
-                  setLoanAmount(event.target.value)
-                }
-                required
-                fullWidth
-              />
+                  <Typography
+                    sx={{
+                      color: "text.secondary",
+                      fontSize: "0.86rem",
+                    }}
+                  >
+                    All fields are required.
+                  </Typography>
+                </Box>
+              </Box>
 
-              <TextField
-                label="Loan Purpose"
-                value={loanPurpose}
-                onChange={(event) =>
-                  setLoanPurpose(event.target.value)
-                }
-                required
-                fullWidth
-              />
+              <Grid container spacing={2.3}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="Monthly income"
+                    type="number"
+                    value={monthlyIncome}
+                    onChange={(event) =>
+                      setMonthlyIncome(event.target.value)
+                    }
+                    fullWidth
+                    required
+                  />
+                </Grid>
 
-              <TextField
-                label="Existing Debt"
-                type="number"
-                value={existingDebt}
-                onChange={(event) =>
-                  setExistingDebt(event.target.value)
-                }
-                required
-                fullWidth
-              />
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    select
+                    label="Employment status"
+                    value={employmentStatus}
+                    onChange={(event) =>
+                      setEmploymentStatus(event.target.value)
+                    }
+                    fullWidth
+                    required
+                  >
+                    <MenuItem value="Full-time">
+                      Full-time
+                    </MenuItem>
+                    <MenuItem value="Part-time">
+                      Part-time
+                    </MenuItem>
+                    <MenuItem value="Self-employed">
+                      Self-employed
+                    </MenuItem>
+                    <MenuItem value="Unemployed">
+                      Unemployed
+                    </MenuItem>
+                  </TextField>
+                </Grid>
 
-              <TextField
-                label="Credit History (Months)"
-                type="number"
-                value={creditHistoryMonths}
-                onChange={(event) =>
-                  setCreditHistoryMonths(event.target.value)
-                }
-                required
-                fullWidth
-              />
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="Years of employment"
+                    type="number"
+                    value={employmentYears}
+                    onChange={(event) =>
+                      setEmploymentYears(event.target.value)
+                    }
+                    fullWidth
+                    required
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="Requested loan amount"
+                    type="number"
+                    value={loanAmount}
+                    onChange={(event) =>
+                      setLoanAmount(event.target.value)
+                    }
+                    fullWidth
+                    required
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12 }}>
+                  <TextField
+                    label="Loan purpose"
+                    value={loanPurpose}
+                    onChange={(event) =>
+                      setLoanPurpose(event.target.value)
+                    }
+                    fullWidth
+                    required
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="Existing debt"
+                    type="number"
+                    value={existingDebt}
+                    onChange={(event) =>
+                      setExistingDebt(event.target.value)
+                    }
+                    fullWidth
+                    required
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="Credit history in months"
+                    type="number"
+                    value={creditHistoryMonths}
+                    onChange={(event) =>
+                      setCreditHistoryMonths(
+                        event.target.value
+                      )
+                    }
+                    fullWidth
+                    required
+                  />
+                </Grid>
+              </Grid>
 
               {errorMessage && (
-                <Alert severity="error">
-                  {errorMessage}
-                </Alert>
+                <Box sx={{ mt: 2.5 }}>
+                  <FeedbackAlert
+                    severity="error"
+                    title="Application not submitted"
+                  >
+                    {errorMessage}
+                  </FeedbackAlert>
+                </Box>
               )}
 
               <Button
                 variant="contained"
                 size="large"
+                startIcon={
+                  submitting ? undefined : <SendRounded />
+                }
                 onClick={handleSubmit}
                 disabled={submitting}
+                fullWidth
+                sx={{
+                  mt: 3,
+                  minHeight: 56,
+                  borderRadius: 3.5,
+                }}
               >
                 {submitting ? (
                   <>
@@ -236,50 +318,111 @@ export default function LoanApplicationPage() {
                         mr: 1,
                       }}
                     />
-                    Submitting...
+                    Assessing application...
                   </>
                 ) : (
-                  "Submit Application"
+                  "Submit for assessment"
                 )}
               </Button>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <Card
+            sx={{
+              position: { lg: "sticky" },
+              top: { lg: 32 },
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6">
+                How assessment works
+              </Typography>
+
+              <Typography
+                sx={{
+                  mt: 1,
+                  mb: 3,
+                  color: "text.secondary",
+                  fontSize: "0.9rem",
+                }}
+              >
+                SmartLend evaluates the submitted information
+                through its risk-scoring service.
+              </Typography>
+
+              {[
+                "Your financial information is validated.",
+                "The AI service calculates a risk score.",
+                "The application is stored for review.",
+              ].map((item, index) => (
+                <Box
+                  key={item}
+                  sx={{
+                    display: "flex",
+                    gap: 1.4,
+                    mb: 2,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 30,
+                      height: 30,
+                      display: "grid",
+                      placeItems: "center",
+                      flexShrink: 0,
+                      borderRadius: 2,
+                      color: "#4F46E5",
+                      fontWeight: 800,
+                      fontSize: "0.8rem",
+                      backgroundColor:
+                        "rgba(99,102,241,0.1)",
+                    }}
+                  >
+                    {index + 1}
+                  </Box>
+
+                  <Typography
+                    sx={{
+                      color: "#526078",
+                      fontSize: "0.88rem",
+                    }}
+                  >
+                    {item}
+                  </Typography>
+                </Box>
+              ))}
 
               {result && (
-                <Card variant="outlined">
-                  <CardContent>
-                    <Alert severity={getResultSeverity()}>
-                      Application assessment completed.
-                    </Alert>
+                <Box sx={{ mt: 3 }}>
+                  <FeedbackAlert
+                    severity={resultSeverity}
+                    title="Assessment completed"
+                  >
+                    Status: {result.status}
+                    <br />
+                    Risk score:{" "}
+                    {result.riskScore === null
+                      ? "Not available"
+                      : result.riskScore.toFixed(2)}
+                  </FeedbackAlert>
 
-                    <Typography
-                      sx={{
-                        mt: 2,
-                        fontWeight: 600,
-                      }}
-                    >
-                      Status: {result.status}
-                    </Typography>
-
-                    <Typography sx={{ mt: 1 }}>
-                      Risk Score:{" "}
-                      {result.riskScore === null
-                        ? "Not available"
-                        : result.riskScore.toFixed(2)}
-                    </Typography>
-
-                    <Button
-                      variant="outlined"
-                      sx={{ mt: 3 }}
-                      onClick={() => navigate("/dashboard")}
-                    >
-                      Back to Dashboard
-                    </Button>
-                  </CardContent>
-                </Card>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CheckCircleRounded />}
+                    fullWidth
+                    sx={{ mt: 2 }}
+                    onClick={() => navigate("/dashboard")}
+                  >
+                    View dashboard
+                  </Button>
+                </Box>
               )}
-            </Stack>
-          </CardContent>
-        </Card>
-      </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       <Snackbar
         open={Boolean(successMessage)}
@@ -290,14 +433,16 @@ export default function LoanApplicationPage() {
           horizontal: "center",
         }}
       >
-        <Alert
-          severity="success"
-          variant="filled"
-          onClose={() => setSuccessMessage("")}
-        >
-          {successMessage}
-        </Alert>
+        <Box>
+          <FeedbackAlert
+            severity="success"
+            title="Application submitted"
+            onClose={() => setSuccessMessage("")}
+          >
+            {successMessage}
+          </FeedbackAlert>
+        </Box>
       </Snackbar>
-    </Container>
+    </AppLayout>
   );
 }

@@ -2,7 +2,6 @@ import { useContext, useState } from "react";
 import type { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  AccountBalanceWalletRounded,
   AddCircleOutlineRounded,
   AdminPanelSettingsRounded,
   DashboardRounded,
